@@ -1,0 +1,96 @@
+scope: postgres-cluster
+namespace: /db/
+name: ${NODE_NAME}
+
+restapi:
+  listen: 0.0.0.0:8008
+  connect_address: ${NODE_IP}:8008
+
+etcd3:
+  hosts:
+    - patroni1:2379
+    - patroni2:2379
+    - patroni3:2379
+
+bootstrap:
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 33554432
+    synchronous_mode: false
+    postgresql:
+      use_pg_rewind: true
+      use_slots: true
+      parameters:
+        wal_level: replica
+        hot_standby: "on"
+        wal_keep_size: 512
+        max_wal_senders: 10
+        max_replication_slots: 10
+        wal_log_hints: "on"
+        archive_mode: "off"
+        shared_preload_libraries: "pg_stat_statements"
+        max_connections: 200
+        shared_buffers: 256MB
+        effective_cache_size: 768MB
+        work_mem: 4MB
+        maintenance_work_mem: 64MB
+        checkpoint_completion_target: "0.9"
+        min_wal_size: 512MB
+        max_wal_size: 2GB
+        log_min_duration_statement: 1000
+        log_checkpoints: "on"
+        log_connections: "on"
+        log_disconnections: "on"
+        log_lock_waits: "on"
+        password_encryption: scram-sha-256
+  initdb:
+    - encoding: UTF8
+    - data-checksums
+  pg_hba:
+    - host replication replicator 0.0.0.0/0 scram-sha-256
+    - host all all 0.0.0.0/0 scram-sha-256
+  users:
+    admin:
+      password: admin_password
+      options:
+        - createrole
+        - createdb
+    # pgbouncer_auth: used by PgBouncer to look up scram verifiers via auth_query.
+    # Must be able to read pg_shadow — granted via pg_shadow membership below.
+    # Note: options here are passed as CREATE ROLE ... options; pg_shadow access
+    # is granted via post-init SQL in the entrypoint.
+    pgbouncer_auth:
+      password: pgbouncer_auth_password
+
+postgresql:
+  listen: 0.0.0.0:5432
+  connect_address: ${NODE_IP}:5432
+  data_dir: /data/patroni
+  bin_dir: /usr/lib/postgresql/18/bin
+  pgpass: /tmp/pgpass
+  authentication:
+    replication:
+      username: replicator
+      password: rep_password
+    superuser:
+      username: postgres
+      password: postgres_password
+    rewind:
+      username: rewind_user
+      password: rewind_password
+  parameters:
+    unix_socket_directories: '/var/run/postgresql'
+  # post_init runs once on the node that bootstraps the cluster (the first leader).
+  # Grants pg_shadow read access to pgbouncer_auth so auth_query works.
+  post_init: /etc/patroni_post_init.sh
+
+watchdog:
+  mode: off
+
+tags:
+  nofailover: false
+  noloadbalance: false
+  clonefrom: false
+  nosync: false

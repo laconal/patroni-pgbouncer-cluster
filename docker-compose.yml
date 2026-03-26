@@ -1,0 +1,116 @@
+networks:
+  patroni_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.29.0.0/16
+
+volumes:
+  patroni1_data:
+  patroni2_data:
+  patroni3_data:
+
+services:
+
+  # ── Patroni nodes (each runs PostgreSQL + etcd + Patroni + PgBouncer) ───────
+  #
+  #  New architecture:
+  #    Client → HAProxy:5000/5001 → patroniN:6432 (PgBouncer) → patroniN:5432 (PG)
+  #
+  #  HAProxy health-checks Patroni REST (:8008) to know which node is primary.
+  #  PgBouncer on each node pools connections locally — no cross-node bouncing.
+
+  patroni1:
+    build:
+      context: ./patroni
+    container_name: patroni1
+    hostname: patroni1
+    environment:
+      NODE_NAME: patroni1
+    volumes:
+      - patroni1_data:/data
+      - ./pgbouncer/pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini
+      - ./pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt
+    networks:
+      - patroni_net
+    ports:
+      - "5432:5432"    # PG direct (debug)
+      - "6432:6432"    # PgBouncer direct (debug)
+      - "8008:8008"    # Patroni REST API
+      - "2379:2379"    # etcd client
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8008/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+
+  patroni2:
+    build:
+      context: ./patroni
+    container_name: patroni2
+    hostname: patroni2
+    environment:
+      NODE_NAME: patroni2
+    volumes:
+      - patroni2_data:/data
+      - ./pgbouncer/pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini
+      - ./pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt
+    networks:
+      - patroni_net
+    ports:
+      - "5433:5432"    # PG direct (debug)
+      - "6433:6432"    # PgBouncer direct (debug)
+      - "8009:8008"    # Patroni REST API
+      - "2380:2379"    # etcd client
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8008/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+
+  patroni3:
+    build:
+      context: ./patroni
+    container_name: patroni3
+    hostname: patroni3
+    environment:
+      NODE_NAME: patroni3
+    volumes:
+      - patroni3_data:/data
+      - ./pgbouncer/pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini
+      - ./pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt
+    networks:
+      - patroni_net
+    ports:
+      - "5434:5432"    # PG direct (debug)
+      - "6434:6432"    # PgBouncer direct (debug)
+      - "8010:8008"    # Patroni REST API
+      - "2381:2379"    # etcd client
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8008/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+
+  haproxy:
+    build:
+      context: ./haproxy
+    container_name: haproxy
+    hostname: haproxy
+    networks:
+      - patroni_net
+    ports:
+      - "5000:5000"    # primary R/W  → PgBouncer on current leader
+      - "5001:5001"    # replicas R/O → PgBouncer on standbys (round-robin)
+      - "7000:7000"    # HAProxy stats UI
+    depends_on:
+      - patroni1
+      - patroni2
+      - patroni3
+    restart: unless-stopped

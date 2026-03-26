@@ -1,0 +1,4 @@
+"pgbouncer_admin" "pgbouncer_admin_password"
+"pgbouncer_auth" "pgbouncer_auth_password"
+"postgres" "postgres_password"
+"dummy" "md52284e85c761030af4607677d8bc8404d"
