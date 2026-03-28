@@ -11,15 +11,6 @@ volumes:
   patroni3_data:
 
 services:
-
-  # ── Patroni nodes (each runs PostgreSQL + etcd + Patroni + PgBouncer) ───────
-  #
-  #  New architecture:
-  #    Client → HAProxy:5000/5001 → patroniN:6432 (PgBouncer) → patroniN:5432 (PG)
-  #
-  #  HAProxy health-checks Patroni REST (:8008) to know which node is primary.
-  #  PgBouncer on each node pools connections locally — no cross-node bouncing.
-
   patroni1:
     build:
       context: ./patroni

@@ -49,14 +49,14 @@ RUN mkdir -p /data/patroni /data/etcd /var/run/postgresql /var/run/pgbouncer \
     && chmod 700 /data/patroni /data/etcd
 
 COPY patroni.yml /etc/patroni.yml
-COPY post_init.sh /etc/patroni_post_init.sh
+# COPY post_init.sh /etc/patroni_post_init.sh
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh /etc/patroni_post_init.sh
+# RUN chmod +x /entrypoint.sh /etc/patroni_post_init.sh
 
-# PgBouncer config is bind-mounted at runtime from ./pgbouncer/
-# (see docker-compose.yml volumes section)
 
 EXPOSE 5432 6432 8008 2379 2380
 
 USER root
+# PgBouncer config is bind-mounted at runtime from ./pgbouncer/
+# (see docker-compose.yml volumes section)
 ENTRYPOINT ["/entrypoint.sh"]

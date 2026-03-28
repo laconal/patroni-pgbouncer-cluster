@@ -7,6 +7,7 @@ restapi:
   connect_address: ${NODE_IP}:8008
 
 etcd3:
+  log-level: error
   hosts:
     - patroni1:2379
     - patroni2:2379
@@ -14,13 +15,15 @@ etcd3:
 
 bootstrap:
   dcs:
-    ttl: 30
-    loop_wait: 10
+    ttl: 15
+    loop_wait: 5
     retry_timeout: 10
     maximum_lag_on_failover: 33554432
 
     # Async replication. The primary does not wait for a replica to confirm WAL receipt before acknowledging a commit. Faster, but you can lose committed transactions if the primary crashes before a replica catches up.
-    synchronous_mode: true 
+    synchronous_mode: true  
+    synchronous_mode_strict: true # primary refuses writes if NO sync standby available
+    synchronous_node_count: 2 # amount of synchronous nodes
     postgresql:
     # after a failover, the old primary may have diverged WAL. pg_rewind lets Patroni "rewind" it back to a common point and re-attach it as a replica without a full base backup. Requires wal_log_hints: on
       use_pg_rewind: true
