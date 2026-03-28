@@ -18,7 +18,7 @@ bootstrap:
     loop_wait: 10
     retry_timeout: 10
     maximum_lag_on_failover: 33554432
-    synchronous_mode: false
+    synchronous_mode: true
     postgresql:
       use_pg_rewind: true
       use_slots: true
