@@ -3,7 +3,7 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.29.0.0/16
+        - subnet: 172.21.0.0/16
 
 volumes:
   patroni1_data:
@@ -25,10 +25,10 @@ services:
     networks:
       - patroni_net
     ports:
-      - "5432:5432"    # PG direct (debug)
-      - "6432:6432"    # PgBouncer direct (debug)
-      - "8008:8008"    # Patroni REST API
-      - "2379:2379"    # etcd client
+      - "5432:5432" # PG direct (debug)
+      - "6432:6432" # PgBouncer direct (debug)
+      - "8008:8008" # Patroni REST API
+      - "2379:2379" # etcd client
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:8008/health || exit 1"]
@@ -51,10 +51,10 @@ services:
     networks:
       - patroni_net
     ports:
-      - "5433:5432"    # PG direct (debug)
-      - "6433:6432"    # PgBouncer direct (debug)
-      - "8009:8008"    # Patroni REST API
-      - "2380:2379"    # etcd client
+      - "5433:5432" # PG direct (debug)
+      - "6433:6432" # PgBouncer direct (debug)
+      - "8009:8008" # Patroni REST API
+      - "2380:2379" # etcd client
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:8008/health || exit 1"]
@@ -77,10 +77,10 @@ services:
     networks:
       - patroni_net
     ports:
-      - "5434:5432"    # PG direct (debug)
-      - "6434:6432"    # PgBouncer direct (debug)
-      - "8010:8008"    # Patroni REST API
-      - "2381:2379"    # etcd client
+      - "5434:5432" # PG direct (debug)
+      - "6434:6432" # PgBouncer direct (debug)
+      - "8010:8008" # Patroni REST API
+      - "2381:2379" # etcd client
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:8008/health || exit 1"]
@@ -97,9 +97,9 @@ services:
     networks:
       - patroni_net
     ports:
-      - "5000:5000"    # primary R/W  → PgBouncer on current leader
-      - "5001:5001"    # replicas R/O → PgBouncer on standbys (round-robin)
-      - "7000:7000"    # HAProxy stats UI
+      - "5000:5000" # primary R/W  → PgBouncer on current leader
+      - "5001:5001" # replicas R/O → PgBouncer on standbys (round-robin)
+      - "7000:7000" # HAProxy stats UI
     depends_on:
       - patroni1
       - patroni2

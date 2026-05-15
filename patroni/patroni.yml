@@ -21,14 +21,14 @@ bootstrap:
     maximum_lag_on_failover: 33554432
 
     # Async replication. The primary does not wait for a replica to confirm WAL receipt before acknowledging a commit. Faster, but you can lose committed transactions if the primary crashes before a replica catches up.
-    synchronous_mode: true  
+    synchronous_mode: true
     synchronous_mode_strict: true # primary refuses writes if NO sync standby available
     synchronous_node_count: 2 # amount of synchronous nodes
     postgresql:
-    # after a failover, the old primary may have diverged WAL. pg_rewind lets Patroni "rewind" it back to a common point and re-attach it as a replica without a full base backup. Requires wal_log_hints: on
+      # after a failover, the old primary may have diverged WAL. pg_rewind lets Patroni "rewind" it back to a common point and re-attach it as a replica without a full base backup. Requires wal_log_hints: on
       use_pg_rewind: true
 
-    # each replica gets a replication slot on the primary. The primary retains WAL segments until the replica has consumed them. This prevents a replica from falling behind and missing WAL — but also means a dead replica's slot will cause the primary to accumulate WAL indefinitely until the slot is dropped. Dangerous if a replica goes away for a long time.
+      # each replica gets a replication slot on the primary. The primary retains WAL segments until the replica has consumed them. This prevents a replica from falling behind and missing WAL — but also means a dead replica's slot will cause the primary to accumulate WAL indefinitely until the slot is dropped. Dangerous if a replica goes away for a long time.
       use_slots: true
       parameters:
         wal_level: replica
@@ -48,7 +48,7 @@ bootstrap:
         min_wal_size: 512MB
         max_wal_size: 2GB
 
-        # Queries slower than 1 second are logged. Combined with connection and lock-wait logging, this gives you a full observability picture. One subtlety: with pgBouncer in transaction-mode, you'll see many short-lived backend connections in the PostgreSQL log 
+        # Queries slower than 1 second are logged. Combined with connection and lock-wait logging, this gives you a full observability picture. One subtlety: with pgBouncer in transaction-mode, you'll see many short-lived backend connections in the PostgreSQL log
         # (pgBouncer opens/closes server connections dynamically), which can make log_connections/log_disconnections quite noisy.
         log_min_duration_statement: 1000
         log_checkpoints: "on"
@@ -92,7 +92,7 @@ postgresql:
       username: rewind_user
       password: rewind_password
   parameters:
-    unix_socket_directories: '/var/run/postgresql'
+    unix_socket_directories: "/var/run/postgresql"
   # post_init runs once on the node that bootstraps the cluster (the first leader).
   # Grants pg_shadow read access to pgbouncer_auth so auth_query works.
   post_init: /etc/patroni_post_init.sh
